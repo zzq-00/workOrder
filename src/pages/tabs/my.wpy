@@ -1,0 +1,378 @@
+<style lang="less">
+  .my {
+    padding: 0;
+    margin:0;
+  }
+  // 未登录头部
+  .top{
+    height: 300rpx;
+    background-color: #0393ff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top:1rpx solid #eee;
+    image {
+    width: 200rpx;
+    height: 200rpx;
+    }
+    text {
+      color:#fff;
+      font-size: 34rpx;
+    }
+  }
+  // 内容区域
+  .container {
+    padding: 0 14rpx;
+    .box {
+      .title {
+        height: 90rpx;
+        display: flex;
+        align-items: center;
+        image {
+          width: 40rpx;
+          height:40rpx;
+        }
+        text{
+          font-size: 34rpx;
+          color:#4a4a4a;
+          margin-left:6rpx;
+        }
+      }
+      .list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: center;
+        .item {
+          width: 200rpx;
+          height: 160rpx;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: center;
+          font-size: 24rpx;
+          color: #4a4a4a;
+          image {
+            width: 100rpx;
+            height: 100rpx;
+            margin-bottom: 20rpx;
+          }
+        }
+      }
+    }
+  }
+  // 已登录头部
+  .index{
+    width:100%;
+    height:200rpx;
+    padding: 0 40rpx;
+    background-color: #0393ff;
+    border-top:1rpx solid #fff;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    color:#fff;
+    image {
+      width: 150rpx;
+      height: 150rpx;
+      border-radius: 50%;
+      margin-right:20rpx;
+    }
+    .txt {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        .name{
+          font-size: 38rpx;
+          margin-bottom: 10rpx;
+        }
+        .accunt {
+          font-size: 28rpx;
+        }
+    }
+  }
+
+  // 弹出框
+  .hotline{
+    width: 620rpx;
+    font-size: 34rpx;
+    .hotline-top {
+      height: 130rpx;
+      padding:50rpx;
+      box-sizing: border-box;
+      border-bottom: 1rpx solid #eee;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      image {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: 50%;
+        margin-right: 20rpx;
+      }
+    }
+    .hotline-bottom{
+      height: 300rpx;
+      padding: 30rpx 50rpx 30rpx 50rpx;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      .tag {
+        padding:10rpx 0 30rpx 0;
+        font-size: 28rpx;
+        color:#999;
+      }
+      button {
+        width:100%;
+        height: 70rpx;
+        line-height: 70rpx;
+        box-sizing: border-box;
+      }
+      .checkbox {
+        font-size: 24rpx;
+        color:#666;
+      }
+    }
+  }
+
+  .logout{
+    position: fixed;
+    bottom:0;
+    left:0;
+    width:100vw;
+    background-color: #309deb;
+    color: #fff;
+  }
+  
+</style>
+
+<template>
+  <view class="my">
+    <view class="index" wx:if="{{userData}}">
+      <image src="{{userData.avatarUrl}}" ></image>
+      <view class="txt">
+          <text class="name">{{userData.nickName}}</text>
+          <text class="accunt">地址: {{userData.country}}</text>
+      </view>
+    </view>
+    <!-- 未登录 -->
+    <view class="top" @tap="gologin" wx:else>
+      <image src="../../assets/images/photo1.png"></image>
+      <text>请点击登录</text>
+    </view>
+    <view class="container">
+      <view class="box">
+        <view class="title">
+          <image src="../../assets/images/myicon.png"></image>
+          <text>我的证书</text>
+        </view>
+        <view class="list">
+          <view class="item">
+            <image src="../../assets/images/certificate.png"></image>
+            <text>自助设备</text>
+          </view> 
+        </view>
+      </view>
+      <view class="box">
+        <view class="title">
+          <image src="../../assets/images/myicon.png"></image>
+          <text>我的证书</text>
+        </view>
+        <view class="list">
+          <view class="item">
+            <image src="../../assets/images/mypeixun.png"></image>
+            <text>自助设备</text>
+          </view>         
+        </view>
+      </view>
+      <view class="box">
+        <view class="title">
+          <image src="../../assets/images/myicon.png"></image>
+          <text>我的服务</text>
+        </view>
+        <view class="list">
+          <view class="item" @tap="hotline">
+            <image src="../../assets/images/kefu.png"></image>
+            <text>客服热线</text>
+          </view>
+        </view>
+      </view>
+      <button class="logout" wx:if="{{userData}}" @tap="logout">退出登录</button>
+    </view>
+  </view>
+  <!-- 弹出客服热线 -->
+  <van-dialog id="van-dialog" />
+
+  <!--  弹出登录 -->
+  <van-popup round show="{{ isPopurShow }}" wx:if="{{ isPopurShow }}">
+    <view class="hotline">
+        <view class="hotline-top">
+          <image src="../../assets/images/logo.jpg"></image>
+          <text>中和渠道工单系统</text>
+        </view>
+        <view class="hotline-bottom">
+          <view>授权后开发者获取以下权限</view>
+          <view class="tag">- 获得你的公开信息(昵称、头像、手机等)</view>
+          <button type="primary" open-type="getUserInfo" lang="zh_CN"  bindgetuserinfo="getUserInfo" wx:if="{{showFlag}}">授权登录</button>
+          <button type="primary" open-type='getPhoneNumber' bindgetphonenumber="userLogin" wx:else>授权手机号登录</button>
+        </view>
+    </view>
+  </van-popup>
+</template>
+
+<script>
+import wepy from 'wepy'
+import Dialog from '../../assets/lib/dialog/dialog'
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: '个人中心'
+  }
+  data = {
+    userData: null, // 用户信息
+    isPopurShow: false, // 弹出登录
+    showFlag: true // 授权
+  }
+  onLode () {}
+  onShow () {
+    this.getUerInfo()
+    if (this.userData) {
+      this.isPopurShow = false
+    }
+  }
+  methods = {
+    // 去登录
+    gologin () {
+      this.isPopurShow = true
+    },
+    // 获取用户信息
+    async getUserInfo (e) {
+      const loginRes = await wepy.login().catch(err => err)
+      if (loginRes.errMsg !== 'login:ok') {
+        return wepy.baseToast('用户登录失败！')
+      }
+      this.$parent.setCode(loginRes.code)
+      // wepy.setStorageSync('code', loginRes.code)
+      if (e.detail.userInfo) {
+        // 用户按了允许授权按钮  弹出-获取手机号
+        this.showFlag = false
+        // 存到全局
+        this.userData = e.detail.userInfo
+        this.$parent.setUserInfo(e.detail.userInfo)
+        this.$apply()
+      } else {
+        // 用户按了拒绝按钮
+        wx.showModal({
+          title: '警告',
+          content: '您点击了拒绝授权，将无法进入小程序，请授权之后再进入!!!',
+          showCancel: false,
+          confirmText: '返回授权',
+          success: function(res) {
+            // 用户没有授权成功，不需要改变 isHide 的值
+            if (res.confirm) {
+              console.log('用户点击了“返回授权”')
+            }
+          }
+        })
+      }
+    },
+    // 获取手机号
+    async userLogin(e) {
+      if (e.detail.errMsg !== 'getPhoneNumber:ok') { // 用户点击拒绝
+        console.log('拒绝授权手机号')
+        return wx.showModal({
+          title: '警告',
+          content: '您拒绝授权，将无法进入小程序，请授权之后再进入',
+          showCancel: false,
+          confirmText: '返回授权'
+        })
+      }
+      console.log(wepy.getStorageSync('globalData').code)
+      // 组织出一个参数对象
+      const params = {
+        type: '0',
+        openId: '',
+        encryptedData: e.detail.encryptedData,
+        iv: e.detail.iv,
+        code: wepy.getStorageSync('globalData').code
+      }
+      wx.checkSession({
+        success: (res) => {
+          wepy.request({
+            method: 'get',
+            url: 'https://testorder.nmcc.com.cn/wechatGZLogin.do',
+            header: {
+              'content-type': 'application/json'
+            },
+            data: params
+          }).then(res => {
+            // 全局存数据
+            this.$parent.setphotoNum(res.data)
+            if (res.data.code === '2') {
+              // 内部错误
+              console.log('请求后-内部错误')
+              this.$parent.setphotoNum(res.data)
+              wx.showToast({
+                icon: 'none',
+                title: '获取失败,请重新获取'
+              })
+            }
+          })
+          this.isPopurShow = false
+          this.$apply()
+        },
+        fail: (res) => {
+          console.log('登录过期', res)
+          this.getUserInfo()
+        }
+      })
+    },
+    // 弹出客服热线
+    hotline () {
+      if (this.userData == null) {
+        wx.showToast({
+          icon: 'none',
+          title: '请先去登录'
+        })
+      } else {
+          // this.isHotline = true
+        Dialog.confirm({
+          title: '中和渠道客服热线',
+          message: '10108668'
+        }).then(() => {
+          wx.makePhoneCall({
+            phoneNumber: '10108668',
+            success: function () {
+            },
+            fail: function () {
+              console.log('拨号失败！')
+            }
+          })
+        })
+      }
+    },
+    logout () {
+      this.userData = null
+      this.showFlag = true
+      this.$apply()
+      // this.$parent.setUserInfo(null)
+      // this.$parent.setphotoNum(null)
+       wx.clearStorageSync('globalData')
+      wx.showToast({
+        icon: 'none',
+        title: '退出登录'
+      })
+      this.onLoad()
+      // this.$apply()
+    }
+  }
+
+  getUerInfo () {
+    this.userData = wepy.getStorageSync('globalData').userInfo
+    this.$apply()
+  }
+}
+</script>

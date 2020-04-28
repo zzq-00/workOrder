@@ -1,0 +1,218 @@
+<style lang="less" scoped>
+// 弹出框
+  .hotline{
+    width: 620rpx;
+    font-size: 34rpx;
+    .hotline-top {
+      height: 130rpx;
+      padding:50rpx;
+      box-sizing: border-box;
+      border-bottom: 1rpx solid #eee;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      image {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: 50%;
+        margin-right: 20rpx;
+      }
+    }
+    .hotline-bottom{
+      height: 300rpx;
+      padding: 30rpx 50rpx 30rpx 50rpx;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      .tag {
+        padding:10rpx 0 30rpx 0;
+        font-size: 28rpx;
+        color:#999;
+      }
+      button {
+        width:100%;
+        height: 70rpx;
+        line-height: 70rpx;
+        box-sizing: border-box;
+      }
+      .checkbox {
+        font-size: 24rpx;
+        color:#666;
+      }
+    }
+  }
+</style>
+<template>
+  <van-dialog id="van-dialog" />
+  <view class="container" wx:if="{{phoneNumber}}">
+    <web-view src="https://testorder.nmcc.com.cn/wechatGZEntrance.do?phoneNumber={{phoneNumber}}"></web-view>
+  </view>
+
+  <!--  弹出登录 -->
+  <van-popup round show="{{ isPopurShow }}" wx:if="{{ isPopurShow }}">
+    <view class="hotline">
+        <view class="hotline-top">
+          <image src="../../assets/images/logo.jpg"></image>
+          <text>中和渠道工单系统</text>
+        </view>
+        <view class="hotline-bottom">
+          <view>授权后开发者获取以下权限</view>
+          <view class="tag">- 获得你的公开信息(昵称、头像、手机等)</view>
+          <button type="primary" open-type="getUserInfo" lang="zh_CN"  bindgetuserinfo="getUserInfo" wx:if="{{showFlag}}">授权登录</button>
+          <button type="primary" open-type='getPhoneNumber' bindgetphonenumber="userLogin" wx:else>授权手机号登录</button>
+        </view>
+    </view>
+  </van-popup>
+</template>
+
+<script>
+import wepy from 'wepy'
+import Dialog from '../../assets/lib/dialog/dialog.js'
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: '工单管理'
+  }
+  data = {
+    phoneNumber: null,
+    isPopurShow: false,
+    showFlag: true // 授权
+  }
+  onLoad () {}
+  onShow () {
+    if (wepy.getStorageSync('globalData') === '' || wepy.getStorageSync('globalData').photoNum === null) {
+      Dialog.confirm({
+        title: '手机号为空',
+        message: '您未授权手机号，请先去登录'
+      }).then(() => {
+        this.isPopurShow = true
+        this.$apply()
+      }).catch(() => {
+        wx.showToast({
+          icon: 'none',
+          title: '非有效用户'
+        })
+        wx.switchTab({
+          url: '/pages/tabs/home'
+        })
+      })
+    } else {
+      var _photoNum = wepy.getStorageSync('globalData').photoNum
+      this.phoneNumber = _photoNum.data.phoneNumber
+      this.$apply()
+    }
+  }
+  // onTabItemTap(item) {
+  //   wx.requestSubscribeMessage({ // 获取下发权限
+  //     tmplIds: ['Lkvv1sYumueqJO1kiPvefLlTN0uu1v_nCo0c4pQCE8g'], // 此处写在后台获取的模板ID，可以写多个模板ID，看自己的需求
+  //     success: (res) => {
+  //       if (res['Lkvv1sYumueqJO1kiPvefLlTN0uu1v_nCo0c4pQCE8g'] === 'accept') { // accept--用户同意 reject--用户拒绝 ban--微信后台封禁,可不管
+  //         console.log('用户同意订阅')
+  //       } else {
+  //         wx.showModal({
+  //           title: '温馨提示',
+  //           content: '您已拒绝接受，将无法在微信中收到服务通知！',
+  //           showCancel: false,
+  //           success: res => {
+  //             if (res.confirm) {
+  //           // 这里可以写自己的逻辑
+  //             }
+  //           }
+  //         })
+  //       }
+  //     }
+  //   })
+  // }
+  methods = {
+    // 获取用户信息
+    async getUserInfo (e) {
+      const loginRes = await wepy.login().catch(err => err)
+      this.$parent.setCode(loginRes.code)
+      // wepy.setStorageSync('code', loginRes.code)
+      if (e.detail.userInfo) {
+        // 用户按了允许授权按钮  弹出-获取手机号
+        this.showFlag = false
+        // 存到全局
+        this.$parent.setUserInfo(e.detail.userInfo)
+        this.$apply()
+      } else {
+        // 用户按了拒绝按钮
+        wx.showModal({
+          title: '警告',
+          content: '您点击了拒绝授权，将无法进入小程序，请授权之后再进入!!!',
+          showCancel: false,
+          confirmText: '返回授权',
+          success: function(res) {
+            // 用户没有授权成功，不需要改变 isHide 的值
+            if (res.confirm) {
+              console.log('用户点击了“返回授权”')
+            }
+          }
+        })
+      }
+    },
+    // 获取手机号
+    async userLogin(e) {
+      if (e.detail.errMsg !== 'getPhoneNumber:ok') { // 用户点击拒绝
+        console.log('拒绝授权手机号')
+        return wx.showModal({
+          title: '警告',
+          content: '您拒绝授权，将无法进入小程序，请授权之后再进入',
+          showCancel: false,
+          confirmText: '返回授权'
+        })
+      }
+      // 组织出一个参数对象
+      const params = {
+        type: '0',
+        openId: '',
+        encryptedData: e.detail.encryptedData,
+        iv: e.detail.iv,
+        code: wepy.getStorageSync('globalData').code
+      }
+      wx.checkSession({
+        success: (res) => {
+          wepy.request({
+            method: 'get',
+            url: 'https://testorder.nmcc.com.cn/wechatGZLogin.do',
+            header: {
+              'content-type': 'application/json'
+            },
+            data: params
+          }).then(res => {
+            if (res.data.code === '1') {
+              // 非中和用户
+              this.phoneNumber = res.data.data.phoneNumber
+              this.$parent.setphotoNum(res.data)
+              this.$apply()
+            } else if (res.data.code === '2') {
+              // 内部错误
+              console.log('请求后-内部错误')
+              this.phoneNumber = res.data.data.phoneNumber
+              this.$parent.setphotoNum(res.data)
+              wx.showToast({
+                icon: 'none',
+                title: '获取失败,请重新获取'
+              })
+              this.onLoad()
+            } else {
+              // 有效用户--全局存数据--去首页
+              this.phoneNumber = res.data.data.phoneNumber
+              this.$parent.setphotoNum(res.data)
+              this.$apply()
+            }
+          })
+          this.isPopurShow = false
+          this.$apply()
+        },
+        fail: (res) => {
+          console.log('登录过期', res)
+          this.showFlag = true
+          this.getUserInfo()
+        }
+      })
+    }
+  }
+}
+</script>

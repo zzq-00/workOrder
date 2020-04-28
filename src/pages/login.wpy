@@ -1,0 +1,249 @@
+<style lang="less" scoped>
+  // 弹出框
+  .hotline{
+    width: 620rpx;
+    font-size: 34rpx;
+    .hotline-top {
+      height: 130rpx;
+      padding:50rpx;
+      box-sizing: border-box;
+      border-bottom: 1rpx solid #eee;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      image {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: 50%;
+        margin-right: 20rpx;
+      }
+    }
+    .hotline-bottom{
+      height: 300rpx;
+      padding: 30rpx 50rpx 30rpx 50rpx;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      .tag {
+        padding:10rpx 0 30rpx 0;
+        font-size: 28rpx;
+        color:#999;
+      }
+      button {
+        width:100%;
+        height: 70rpx;
+        line-height: 70rpx;
+        box-sizing: border-box;
+      }
+      .checkbox {
+        font-size: 24rpx;
+        color:#666;
+      }
+    }
+  }
+  .noUser {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    image {
+      width: 200rpx;
+      height: 200rpx;
+    }
+  }
+</style>
+
+<template>
+  <van-popup round show="{{ isPopurShow }}" wx:if="{{ isPopurShow }}">
+    <view class="hotline">
+        <view class="hotline-top">
+          <image src="../assets/images/logo.jpg"></image>
+          <text>中和渠道工单系统</text>
+        </view>
+        <view class="hotline-bottom">
+          <view>授权后开发者获取以下权限</view>
+          <view class="tag">- 获得你的公开信息(昵称、头像、手机等)</view>
+          <button type="primary" open-type="getUserInfo" lang="zh_CN"  bindgetuserinfo="getUserInfo" wx:if="{{showFlag}}">授权登录</button>
+          <button type="primary" open-type='getPhoneNumber' bindgetphonenumber="userLogin" wx:else>授权手机号登录</button>
+        </view>
+    </view>
+  </van-popup>
+  <view class="noUser" wx:if="{{ !isPopurShow }}">
+      <image src="../assets/images/jinggao.png"></image>
+      <view style="margin: 40rpx;">！您不是中和工单有效用户</view>
+      <!-- <button type="primary" @tap="goRegister">去注册认证</button> -->
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+export default class extends wepy.page {
+  data = {
+    isPopurShow: true, // 弹
+    showFlag: true, // 授权--登录
+    userInfo: null,
+    photoNum: null
+  }
+  onLoad (option) {
+    this.isUser()
+  }
+
+  isUser () {
+    wx.getSetting({
+      success: res => {
+        if (res.authSetting['scope.userInfo']) {
+          this.isLogin()
+        }
+      },
+      fail: res => {
+        console.log('fail', res)
+      }
+    })
+  }
+  // 判断登录状态
+  isLogin() {
+    wx.checkSession({
+      success: (res) => {
+        console.log('存在登陆', res)
+        // 存在登陆态
+        var value = wepy.getStorageSync('globalData')
+        if (value.photoNum.code === '0') {
+          // 有效用户--跳转到首页
+          wepy.switchTab({
+            url: '/pages/tabs/home'
+          })
+        } else if (value.photoNum.code === '2') {
+          console.log('初始化内部错误')
+          wx.showToast({
+            icon: 'none',
+            title: '获取失败,请重新获取'
+          })
+          // this.onLoad()
+        } else {
+          // 无效用户 弹出提示非有效用户
+          this.isPopurShow = false
+          this.$apply()
+        }
+      },
+      fail: (res) => {
+        console.log('登录过期', res)
+        // this.onLoad()
+      }
+    })
+  }
+  methods = {
+    // 获取用户信息
+    async getUserInfo (e) {
+      const loginRes = await wepy.login().catch(err => err)
+      if (loginRes.errMsg !== 'login:ok') {
+        return wepy.baseToast('用户登录失败！')
+      }
+      wepy.setStorageSync('code', loginRes.code)
+      if (e.detail.userInfo) {
+        // 用户按了允许授权按钮  弹出-获取手机号
+        this.showFlag = false
+        // 存到全局
+        this.userInfo = e.detail.userInfo
+        this.$parent.setUserInfo(e.detail.userInfo)
+        this.$apply()
+      } else {
+        // 用户按了拒绝按钮
+        wx.showModal({
+          title: '警告',
+          content: '您点击了拒绝授权，将无法进入小程序，请授权之后再进入!!!',
+          showCancel: false,
+          confirmText: '返回授权',
+          success: function(res) {
+            // 用户没有授权成功，不需要改变 isHide 的值
+            if (res.confirm) {
+              console.log('用户点击了“返回授权”')
+            }
+          }
+        })
+      }
+    },
+    // 获取手机号
+    async userLogin(e) {
+      console.log(e)
+      if (e.detail.errMsg !== 'getPhoneNumber:ok') { // 用户点击拒绝
+        console.log('拒绝授权手机号')
+        return wx.showModal({
+          title: '警告',
+          content: '您拒绝授权，将无法进入小程序，请授权之后再进入',
+          showCancel: false,
+          confirmText: '返回授权'
+        })
+      }
+      // const loginRes = await wepy.login().catch(err => err)
+      // if (loginRes.errMsg !== 'login:ok') {
+      //   return wepy.baseToast('用户登录失败！')
+      // }
+      // 组织出一个参数对象
+
+      const params = {
+        type: '0',
+        openId: '',
+        encryptedData: e.detail.encryptedData,
+        iv: e.detail.iv,
+        code: wepy.getStorageSync('code')
+      }
+      wx.checkSession({
+        success: (res) => {
+          console.log('存在登陆', res)
+          wepy.request({
+            method: 'get',
+            url: 'https://testorder.nmcc.com.cn/wechatGZLogin.do',
+            header: {
+              'content-type': 'application/json'
+            },
+            data: params
+          }).then(res => {
+            if (res.data.code === '1') {
+          // 非中和用户
+              this.photoNum = res.data
+              this.$parent.setphotoNum(res.data)
+              this.isPopurShow = false
+              this.$apply()
+            } else if (res.data.code === '2') {
+              // 内部错误
+              console.log('请求后-内部错误')
+              this.photoNum = res.data
+              this.$parent.setphotoNum(res.data)
+              wx.showToast({
+                icon: 'none',
+                title: '获取失败,请重新获取'
+              })
+              this.onLoad()
+            } else {
+              // 有效用户--全局存数据--去首页
+              this.photoNum = res.data
+              this.$parent.setphotoNum(res.data)
+              wepy.switchTab({
+                url: '/pages/tabs/home'
+              })
+            }
+          })
+        },
+        fail: (res) => {
+          console.log('登录过期', res)
+          this.getUserInfo()
+          // wx.login()
+        }
+      })
+
+      this.$apply()
+    },
+
+    // 跳注册页
+    goRegister () {
+      console.log('点击了注册')
+      wepy.navigateTo({
+        url: '/pages/register/register'
+      })
+    }
+  }
+}
+</script>

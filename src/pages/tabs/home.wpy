@@ -1,0 +1,52 @@
+<style lang="less" scoped>
+  image{
+    width: 100vw;
+    // height: 100vh;
+  }
+</style>
+
+<template>
+  <view>
+    <image src="../../assets/images/banner.jpg" mode="widthFix"></image>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: '企业工单'
+  }
+  onLoad (options) {
+  }
+  onShow () {
+  }
+  data = {
+  }
+
+  methods = {
+    news () {
+      console.log('调用')
+      wx.requestSubscribeMessage({ // 获取下发权限
+        tmplIds: ['Lkvv1sYumueqJO1kiPvefLlTN0uu1v_nCo0c4pQCE8g'], // 此处写在后台获取的模板ID，可以写多个模板ID，看自己的需求
+        success: (res) => {
+          if (res['Lkvv1sYumueqJO1kiPvefLlTN0uu1v_nCo0c4pQCE8g'] === 'accept') { // accept--用户同意 reject--用户拒绝 ban--微信后台封禁,可不管
+            console.log('用户同意')
+          } else {
+            wx.showModal({
+              title: '温馨提示',
+              content: '您已拒绝接受，将无法在微信中收到服务通知！',
+              showCancel: false,
+              success: res => {
+                if (res.confirm) {
+              // 这里可以写自己的逻辑
+                }
+              }
+            })
+          }
+        }
+      })
+    }
+  }
+}
+</script>
